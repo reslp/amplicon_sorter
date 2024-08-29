@@ -177,6 +177,8 @@ def get_arguments():
                             outputfolder. Default = input folder')
     parser.add_argument('-ho', '--histogram_only', action = 'store_true',
                         help='Only creates a read length histogram.')
+    parser.add_argument('-rc', '--read_cutoff', action = 'store', default=200,
+                        help='Cutoff for the number of reads used when writing a consensus alignment.')
 
     args = parser.parse_args()
     return args
@@ -210,6 +212,7 @@ def save_arguments(): # save all settings in the result.txt file
         rf.write('- alignment = ' + str(args.alignment) + '\n')
         rf.write('- ambiguous bases = ' + str(args.ambiguous) + '\n')
         rf.write('- histogram_only = ' + str(args.histogram_only) + '\n')
+        rf.write('- read_cutoff = ' + str(args.read_cutoff) + '\n')
         rf.write('-----------------------------------------------------------\n')
 #==============================================================================  
 def distance(X1,X2, mode='NW'):  # calculate the similarity of 2 sequences
@@ -1707,8 +1710,8 @@ def update_groups(group_filename, grouplist):
         k = 0 # number of todofiles
         for i, x in enumerate(grouplist):
             if x[-1].isdigit(): # if the last item is a number, sequence has been added
-                if len(x) > 200: # if number of reads > 200, only take 200 for consensus
-                    x = random.sample(x, 200)
+                if len(x) > nreadsco: # if number of reads > specified cutoff, only take nseqs for consensus
+                    x = random.sample(x, nreadsco)
                 todolist.append([i, x])
                 if len(todolist) == 500: # save in chuncks to save memory
                     todofilename = os.path.join(outputfolder, 'file_' + str(k) + '.todo')
@@ -1846,8 +1849,8 @@ def compare_consensus(group_filename, grouplist, length_diff_c):
             todolist = []
             k = 0 # number of todofiles
             for i,x in enumerate(grouplist):
-                if len(x) > 200: # if number of reads > 200, only take 200 for consensus
-                    x = random.sample (x, 200)
+                if len(x) > nreadsco: # if number of reads > 200, only take 200 for consensus
+                    x = random.sample (x, nreadsco)
                 todolist.append([i, x])
                 if len(todolist) == 500: # save in chuncks to save memory
                     todofilename = os.path.join(outputfolder, 'file_' + str(k) + '.todo')
@@ -2047,6 +2050,7 @@ def sort(group_filename):
 if __name__ == '__main__':
     try:
         args = get_arguments()
+        nreadsco = int(args.read_cutoff)
         check_version(version)
         if args.similar_species_groups is None: # needed if multiple files are done
             ssg = 'Estimate'                    # otherwise it uses the same value for all
